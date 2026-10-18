@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RecNet — photos from RecNova</title>
+<meta name="description" content="RecNet is where RecNova camera photos live. Fan-made, not affiliated with Rec Room Inc.">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f2f2f2; color: #1c1c1c; min-height: 100vh;
+  }
+  header {
+    background: #fff; border-bottom: 1px solid #e3e3e3;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .bar {
+    max-width: 1200px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .logo { font-size: 26px; font-weight: 800; color: #e83434; letter-spacing: -1px; }
+  .logo span { color: #1c1c1c; font-weight: 400; }
+  .tag { color: #777; font-size: 14px; }
+  .count { margin-left: auto; color: #777; font-size: 14px; }
+  main { max-width: 1200px; margin: 0 auto; padding: 24px 20px 60px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: #777; font-size: 14px; margin-bottom: 20px; }
+  .grid {
+    display: grid; gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+  .card {
+    background: #fff; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.12);
+    cursor: pointer; transition: transform .12s ease;
+  }
+  .card:hover { transform: translateY(-2px); }
+  .card img.photo { width: 100%; display: block; aspect-ratio: 16/10; object-fit: cover; background: #111; }
+  .meta { padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 18px;
+  }
+  .who { min-width: 0; }
+  .who .name { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .who .time { color: #888; font-size: 13px; }
+  .caption { padding: 0 14px 14px; color: #444; font-size: 14px; }
+  .empty {
+    text-align: center; padding: 80px 20px; color: #888;
+    background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.12);
+  }
+  .empty .big { font-size: 52px; margin-bottom: 12px; }
+  /* lightbox */
+  #lightbox {
+    position: fixed; inset: 0; background: rgba(0,0,0,.9);
+    display: none; align-items: center; justify-content: center;
+    z-index: 50; padding: 24px; cursor: zoom-out;
+  }
+  #lightbox.open { display: flex; }
+  #lightbox figure { max-width: 1000px; width: 100%; }
+  #lightbox img { width: 100%; border-radius: 8px; display: block; }
+  #lightbox figcaption {
+    color: #fff; margin-top: 12px; display: flex; align-items: center; gap: 10px;
+  }
+  #lightbox .avatar { width: 34px; height: 34px; font-size: 15px; }
+  footer {
+    text-align: center; color: #999; font-size: 12px; padding: 24px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="logo">🌐 rec<span>net</span></div>
+    <div class="tag">photos from RecNova</div>
+    <div class="count" id="count"></div>
+  </div>
+</header>
+<main>
+  <h1>Fresh photos</h1>
+  <div class="sub">Snapped with the 📷 Camera in RecNova — saved straight to RecNet.</div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none">
+    <div class="big">📷</div>
+    <p><b>No photos yet.</b></p>
+    <p>Take one with the Camera in RecNova and hit <b>Save to RecNet</b>.</p>
+  </div>
+</main>
+<div id="lightbox"><figure>
+  <img id="lb-img" alt="RecNet photo">
+  <figcaption><div class="avatar" id="lb-av"></div><div><b id="lb-name"></b><div class="time" id="lb-time" style="color:#bbb;font-size:13px"></div></div></figcaption>
+</figure></div>
+<footer>Fan-made project. Not affiliated with Rec Room Inc.</footer>
+<script>
+const COLORS = ['#e83434','#7c4dff','#0091ea','#00bfa5','#f9a825','#ef6c00','#8e24aa','#3949ab'];
+function colorFor(name){
+  let h = 0;
+  for(const ch of name) h = (h*31 + ch.charCodeAt(0)) >>> 0;
+  return COLORS[h % COLORS.length];
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function load(){
+  let photos = [];
+  try { photos = await (await fetch('photos.json', {cache:'no-store'})).json(); } catch(e){}
+  const grid = document.getElementById('grid');
+  document.getElementById('count').textContent = photos.length ? photos.length + (photos.length===1?' photo':' photos') : '';
+  if(!photos.length){ document.getElementById('empty').style.display = 'block'; return; }
+  photos.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML =
+      '<img class="photo" loading="lazy" src="' + esc(p.image) + '" alt="photo by ' + esc(p.user) + '">' +
+      '<div class="meta"><div class="avatar" style="background:' + colorFor(p.user) + '">' + esc(p.user.charAt(0).toUpperCase()) + '</div>' +
+      '<div class="who"><div class="name">' + esc(p.user) + '</div><div class="time">' + esc(p.time || '') + '</div></div></div>' +
+      (p.caption ? '<div class="caption">' + esc(p.caption) + '</div>' : '');
+    card.onclick = () => openLightbox(p);
+    grid.appendChild(card);
+  });
+}
+function openLightbox(p){
+  document.getElementById('lb-img').src = p.image;
+  const av = document.getElementById('lb-av');
+  av.textContent = p.user.charAt(0).toUpperCase();
+  av.style.background = colorFor(p.user);
+  document.getElementById('lb-name').textContent = p.user;
+  document.getElementById('lb-time').textContent = p.time || '';
+  document.getElementById('lightbox').classList.add('open');
+}
+document.getElementById('lightbox').onclick = () =>
+  document.getElementById('lightbox').classList.remove('open');
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') document.getElementById('lightbox').classList.remove('open');
+});
+load();
+</script>
+</body>
+</html>
