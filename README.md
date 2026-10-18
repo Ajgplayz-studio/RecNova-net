@@ -11,6 +11,7 @@ Add an entry to `photos.json` (newest first):
   "image": "https://files.catbox.moe/xxxxxx.png",
   "user": "Ajgplayz",
   "time": "Oct 18, 5:30 PM",
+  "room": "^DormRoom",
   "caption": "optional caption"
 }
 ```
@@ -18,4 +19,5 @@ Add an entry to `photos.json` (newest first):
 - `image` — the Catbox URL from "Save to RecNet" in the game
 - `user` — the name entered in the game
 - `time` — when it was taken
+- `room` — where it was taken, with a `^` prefix like rec.net (default `^RecNova`)
 - `caption` — optional
